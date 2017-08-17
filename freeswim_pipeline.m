@@ -4,7 +4,7 @@
 % adapted from Bonsai AQ55/A56/A60 analysis script written by Isaac Bianco, Aug 2015
 % and modified by Chris, Oct 2015 - July 2016
 
-%% some inits
+%% some inits/ chage here
 clearvars; clc;
 
 testfilename = '8_11_2017_AN100.bin';
