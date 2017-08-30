@@ -40,7 +40,7 @@ if (isnan(angle)) % replaces all frames where fish track was lost into NaNs.
     posY = 'NaN';
 end
 
-%% compute time series and other params and write to csv
+%% compute time series and other params and write csv
 
 frameNorm = frame-(frame(1)-1);
 
