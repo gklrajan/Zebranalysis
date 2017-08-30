@@ -10,5 +10,3 @@ myBinReader can be used to read all these parameters from the bin file and save 
 The current version is adapted for the 8_11_2017_S1.bin file. But it can be easily downgraded to work with 8_9_2017_S3.bin.
 
 freeswim_pipeline will be the first analysis project looking at the swimming kinematics of the fish.
-
-%this is a test! %test123
