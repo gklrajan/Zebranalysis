@@ -2,17 +2,44 @@
 %by Gokul Rajan, DEL-BENE Lab, 2017-08-10.
 %added more parameters on 2017-08-11.
 
-IFTms = 1000/949; % change this if acq was not at 500 Hz
-h = fopen('8_11_2017_1.bin');
-test = fread(h,inf,'float');
+%% some inits/ change here before run
+clearvars; clc;
+
+testfilename = '8_16_2017_AN022.bin';
+csvfilename = '8_16_2017_AN0022.csv';
+
+IFTms = 1000/500; % change this if acq freq changes
 NumVar = 7;
 
+%% Read the bin file
+h = fopen(testfilename);
+test = fread(h,inf,'float');
+
 frame = test(1:NumVar:end-1);
+posX = test(3:NumVar:end);
+posY = test(4:NumVar:end);
+angle = test(5:NumVar:end);
+angle = rad2deg(angle);
+
+ledStatus = test(6:NumVar:end);
+ledRaw = test(7:NumVar:end);
+CamTime = test(2:NumVar:end);
+
+
+%% cleaning data
+
+if (isnan(angle)) % replaces all frames where fish track was lost into NaNs. 
+    posX = 'NaN';
+    posY = 'NaN';
+end
+
+%% compute time series and other params
+
 frameNorm = frame-(frame(1)-1);
 
 timeMillis = frame*IFTms;
 timeNormMillis = timeMillis-(timeMillis(1)-1);
-millisDiff = diff(timeMillis);
+millisDiff = diff(timeNormMillis);
 totalMillis = timeMillis(end)-timeMillis(1);
 
 timeSec = ((frame*IFTms)/1000);
@@ -20,20 +47,8 @@ totalSec = timeSec(end)-timeSec(1);
 timeNormSecs = timeSec - (timeSec(1)-1);
 totalMin = totalSec/60;
 
-posX = test(3:NumVar:end);
 posXfilt=filtfilt(ones(1,5)/5,1,posX);
-
-posY = test(4:NumVar:end);
 posYfilt=filtfilt(ones(1,5)/5,1,posY);
-
-angle = test(5:NumVar:end);
-%angle = rad2deg(test(5:4:end));
-
-ledStatus = test(6:NumVar:end);
-
-ledRaw = test(7:NumVar:end);
-
-CamTime = test(2:NumVar:end);
 
 angleDiff = (diff(angle));
 angleDiff(end+1) = NaN;
@@ -42,14 +57,28 @@ Reye = blank;
 Leye = blank;
 loomX = blank;
 loomY = blank;
-
-INST_VEL = (diff(posXfilt).^2+diff(posY).^2).^0.5;
             
 mydata = [angle,frame,timeMillis,posX,posY,ledStatus,ledRaw,CamTime,loomX,loomY,Leye,Reye,angleDiff];
-csvwrite('/Institut Curie/Lab/Projects/Reelin/Behavior/preTests/2017-08-07_FS01/trial_AN100.csv',mydata);
-%comet3(posX,posY,timeMillis);
-%plot(posX,posY);
-figure(1); plot(posXfilt,posYfilt);
+%dt = datestr(now,'mm-dd-yyyy_HH-MM');
 
-figure(2); plot(ledStatus*100,'r');
-hold on; plot(INST_VEL,'b');
+
+%% some basic plots and writing to csv
+csvwrite(csvfilename,mydata);
+
+figure(1);plot(posXfilt,posYfilt);
+figure(2);plot3(posXfilt,posYfilt,timeNormMillis);
+
+INST_VEL = (diff(posXfilt).^2+diff(posY).^2).^0.5;
+figure(3);plot(ledStatus*100,'r');
+hold on;plot(INST_VEL,'b');
+
+
+%% Other saving stuff
+filename1 = sprintf('/Institut Curie/Lab/Projects/Reelin/Behavior/preTests/track_%s.jpg',testfilename);
+filename2 = sprintf('/Institut Curie/Lab/Projects/Reelin/Behavior/preTests/trqck3d_%s.jpg',testfilename);
+filename3 = sprintf('/Institut Curie/Lab/Projects/Reelin/Behavior/preTests/stim_%s.jpg',testfilename);
+filename4 = sprintf('/Institut Curie/Lab/Projects/Reelin/Behavior/preTests/allVars_%s.mat',testfilename);
+saveas(figure(1),filename1);
+saveas(figure(2),filename2);
+saveas(figure(3),filename2);
+save(filename4);
