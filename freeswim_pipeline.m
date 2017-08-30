@@ -7,11 +7,11 @@
 %% some inits/ chage here
 clearvars; clc;
 
-testfilename = '8_11_2017_AN100.bin';
-csvfilename = '8_11_2017_AN100.csv';
+testfilename = '8_16_2017_AN012.bin';
+csvfilename = '8_16_2017_AN012.csv';
 
-root = '/Institut Curie/Lab/Projects/Reelin/Behavior/preTests/';
-foldername = fullfile(root,'2017_08_07_rln');
+root = '/Institut Curie/Lab/Projects/Reelin/Behavior/Swim_Kinematics/2017_08_16_RLN/';
+foldername = fullfile(root,'SwimTap');
 allFileNames =dir(fullfile(foldername,'*AN*.bin'));
 
 %num_fish             = sum(structfun(@numel, free_swimming));
