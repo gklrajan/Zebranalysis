@@ -5,8 +5,8 @@
 %% some inits/ change here before run
 clearvars; clc;
 
-testfilename = '8_16_2017_AN022.bin';
-csvfilename = '8_16_2017_AN0022.csv';
+testfilename = '8_16_2017_AN012.bin';
+csvfilename = '8_16_2017_AN012.csv';
 
 IFTms = 1000/500; % change this if acq freq changes
 NumVar = 7;
@@ -80,5 +80,5 @@ filename3 = sprintf('/Institut Curie/Lab/Projects/Reelin/Behavior/preTests/stim_
 filename4 = sprintf('/Institut Curie/Lab/Projects/Reelin/Behavior/preTests/allVars_%s.mat',testfilename);
 saveas(figure(1),filename1);
 saveas(figure(2),filename2);
-saveas(figure(3),filename2);
+saveas(figure(3),filename3);
 save(filename4);

@@ -19,8 +19,9 @@ zebranalysis_folders = struct2cell( dir(root) )';
 
 
 %% Read csv file
-
-
+fid            = fopen('8_16_2017_AN012.csv');
+tmp_data = textscan(fid,'%n%n%n%n%n%n%n%n%n%n%n%n%n', 'delimiter', ',');
+fclose(fid);
 
 %% fish param cals
 
@@ -40,9 +41,3 @@ elseif (DELTA_ORI < 0)|((abs(DELTA_ORI) >= 250) & (DELTA_ORI > 0))
     p.(fieldname)= 1; %right
     
 end
-
-%% pooling
-
-
-
-%% mean cals
