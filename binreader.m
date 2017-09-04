@@ -5,17 +5,18 @@
 %% some inits/ change here before run
 clearvars; clc;
 
-testfilename = '8_16_2017_AN012.bin';
-csvfilename = '8_16_2017_AN012.csv';
+testfilename = '8_11_2017_S1.bin';
+csvfilename = '8_11_2017_S1.csv';
 
-IFTms = 1000/500; % change this if acq freq changes
+IFTms = 1000/949; % change this if acq freq changes
+IFTs = IFTms/1000;
 NumVar = 7;
 
 %% Read the bin file
 h = fopen(testfilename);
 test = fread(h,inf,'float');
 
-frame = test(1:NumVar:end-1);
+frame = test(1:NumVar:end);
 posX = test(3:NumVar:end);
 posY = test(4:NumVar:end);
 angle = test(5:NumVar:end);
@@ -35,16 +36,17 @@ end
 
 %% compute time series and other params
 
-frameNorm = frame-(frame(1)-1);
-
-timeMillis = frame*IFTms;
-timeNormMillis = timeMillis-(timeMillis(1)-1);
+frameNorm = frame-(frame(1));
+frameNormDiff = diff(frameNorm);
+frameNormDiff = [0;frameNormDiff];
+timeMillis = frameNormDiff*IFTms;
+timeNormMillis = timeMillis-(timeMillis(1));
 millisDiff = diff(timeNormMillis);
 totalMillis = timeMillis(end)-timeMillis(1);
 
 timeSec = ((frame*IFTms)/1000);
 totalSec = timeSec(end)-timeSec(1);
-timeNormSecs = timeSec - (timeSec(1)-1);
+timeNormSecs = timeSec - (timeSec(1));
 totalMin = totalSec/60;
 
 posXfilt=filtfilt(ones(1,5)/5,1,posX);
