@@ -92,16 +92,16 @@ idx_nan     = isnan(dx);
 dx(idx_nan) = 0; % for filtering nan values need to be removed 
 dy(idx_nan) = 0;
 
-filterB    = ones(1, 101)./101; % broad filter for event detection, better detection of bout_off
+filter    = ones(1, 101)./101; % filter tbd
 
-dxB        = filtfilt(filterB, 1, dx);
-dyB        = filtfilt(filterB, 1, dy);
+dxf        = filtfilt(filter, 1, dx);
+dyf        = filtfilt(filter, 1, dy);
 
-tmp_fdistB = sqrt(dxB.^2 + dyB.^2);     % distance moved between iterations, in pixels
-tmp_fdistB = tmp_fdistB./20;  % convert to distance in mm
-tmp_fvelB  = tmp_fdistB.*datarate;  % convert to velocity in mm/s
+tmp_fdist = sqrt(dxf.^2 + dyf.^2);     % distance moved between iterations, in pixels
+tmp_fdist = tmp_fdist./20;  % convert to distance in mm
+tmp_fvel  = tmp_fdist.*datarate;  % convert to velocity in mm/s
 
-tmp_fvelB(idx_nan) = nan; % re-insert the nan values
+tmp_fvel(idx_nan) = nan; % re-insert the nan values
 
 % orientation
 
