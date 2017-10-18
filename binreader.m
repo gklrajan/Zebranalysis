@@ -22,20 +22,22 @@ fclose(h);
 tmp_data = tmp_data(1:(end-mod(size(tmp_data,1), num_data_categories)), 1); % cuts when parts of the data categories are missing at the end
 tmp_data = reshape(tmp_data, [num_data_categories, size(tmp_data, 1)/num_data_categories])';
 
+%%
+
 % camera timecounter and datarate
 % linearize the saw-tooth function timestamps
 
-time_diff = [0; diff(tmp_data(:, 2))];                   % in microseconds
-idx_time  = time_diff <= -2^32/1000+2*median(time_diff); % find the frames when timecounter was reset to zero
-
-time_diff(idx_time) = median(time_diff);                 % reset the time difference between these frames to the median in microseconds
+time_diff           = [0; diff(tmp_data(:, 2))];                     % in microseconds
+idx_time            = time_diff <= -2^32/1000 + 2*median(time_diff); % find the frames when timecounter was reset to zero
+time_diff(idx_time) = median(time_diff);                             % reset the time difference between these frames to the median in microseconds
     
-timebase = (cumsum(time_diff) + 1) ./10^6;               % new timebase in seconds
+timebase = (cumsum(time_diff) + 1) ./10^6;                           % new timebase in seconds
 
-% frame time in microsecond
-median(time_diff)
+% camera frame length in microsecond
+frame_length = median(time_diff);
 
-datarate = round(1/(median(time_diff)).*10^6);           % aquisition datarate in Herz
+%
+datarate     = round(1/(median(time_diff)).*10^6);                   % aquisition datarate in Hertz based on the frame timestamps
 
 % camera frame counters and missing frames
 % fill in nan values when frames were lost (most likely due to fish being lost during tracking ) 
