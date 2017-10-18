@@ -12,6 +12,7 @@ fname = uigetfile('*.bin');
 % 6 angle in rad
 
 num_data_categories = 6;
+camscale            = 20.6; % px/mm
 
 % Read and reorganize the bin file
 
@@ -51,9 +52,19 @@ fprintf('%d: %d \n',  [idx_lost, frame_diff(idx_frame)-1].');
 
 figure, plot(frame_diff); hold on; plot(idx_lost, frame_diff(idx_lost) ,'o');
 xlim([-10000, size(frame_diff,1)]);
+title('lost frames');
+xlabel('Framecounter index');
+ylabel('delta (Framecounter index)');
+for ii=1:length(idx_lost)
+    text(idx_lost(ii), frame_diff(idx_lost(ii)) + 0.05*frame_diff(idx_lost(ii)), num2str(idx_lost(ii)), 'HorizontalAlignment', 'center');
+end
 
 % checks if missed timestamps coincide with missed frames, is 0 if inconsistent timestamps outside of missed frames 
 isTime = isequal(idx_time, idx_frame);
+
+if isTime ==0
+    fprintf('timing counter shows flawed interframe timing independent of missing frames!!!');
+end
 
 % insert nans for lost frames...
 
@@ -85,7 +96,7 @@ dx   = [0; diff(xpos)]; % distance between two consecutive x-coordinates
 dy   = [0; diff(ypos)]; % distance between two consecutive y-coordinates
 
 tmp_dist_unfilt           = sqrt(dx.^2 + dy.^2);
-tmp_dist_unfilt           = tmp_dist_unfilt./20;  % convert to distance in mm
+tmp_dist_unfilt           = tmp_dist_unfilt./camscale;  % convert to distance in mm
 tmp_vel_unfilt            = tmp_dist_unfilt.*datarate;  % convert to velocity in mm/s
 
 idx_nan     = isnan(dx);
@@ -98,7 +109,7 @@ dxf        = filtfilt(filter, 1, dx);
 dyf        = filtfilt(filter, 1, dy);
 
 tmp_fdist = sqrt(dxf.^2 + dyf.^2);     % distance moved between iterations, in pixels
-tmp_fdist = tmp_fdist./20;  % convert to distance in mm
+tmp_fdist = tmp_fdist./camscale;  % convert to distance in mm
 tmp_fvel  = tmp_fdist.*datarate;  % convert to velocity in mm/s
 
 tmp_fvel(idx_nan) = nan; % re-insert the nan values
