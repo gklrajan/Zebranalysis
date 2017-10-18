@@ -22,8 +22,6 @@ fclose(h);
 tmp_data = tmp_data(1:(end-mod(size(tmp_data,1), num_data_categories)), 1); % cuts when parts of the data categories are missing at the end
 tmp_data = reshape(tmp_data, [num_data_categories, size(tmp_data, 1)/num_data_categories])';
 
-%%
-
 % camera timecounter and datarate
 % linearize the saw-tooth function timestamps
 
@@ -61,41 +59,72 @@ isTime = isequal(idx_time, idx_frame);
 
 insert_blocks = @(insert_block, vector, n) cat(1,  vector(1:n-1,:), insert_block, vector(n:end,:) );
 
+raw_data = tmp_data;
+
 for ii = nnz(idx_frame):-1:1
  
     nan_block       = nan(frame_diff(idx_lost(ii)) - 1, num_data_categories);
     nan_block(:, 1) = tmp_data(idx_lost(ii)-1, 1)+1: tmp_data(idx_lost(ii)-1, 1) + frame_diff(idx_lost(ii))-1; % fill the first column of the Nan blocks with frame numbers that were missing
     
-    
     tmp_data = insert_blocks(nan_block, tmp_data, idx_lost(ii));
     
 end
 
-tmp_data(:,1) = tmp_data(:,1) - tmp_data(1,1)+1;
+tmp_data(:,1) = tmp_data(:,1) - tmp_data(1,1) + 1; % framecounter starts at 1
 
-
-%%
+%-------------------------------------------------------------------------------------
+%
+% IDENTIFICATION OF SWIM BOUTS (bout speeds, IBIs etc)
+%
+%-------------------------------------------------------------------------------------
 
 xpos = tmp_data(:, 4);
 ypos = tmp_data(:, 5);
 
-dx            = [0; diff(xpos)]; % distance between two consecutive x-coordinates
-dy            = [0; diff(ypos)]; % distance between two consecutive y-coordinates
+dx   = [0; diff(xpos)]; % distance between two consecutive x-coordinates
+dy   = [0; diff(ypos)]; % distance between two consecutive y-coordinates
 
-tmp_dist_unfilt           =  sqrt(dx.^2 + dy.^2);
+tmp_dist_unfilt           = sqrt(dx.^2 + dy.^2);
 tmp_dist_unfilt           = tmp_dist_unfilt./20;  % convert to distance in mm
 tmp_vel_unfilt            = tmp_dist_unfilt.*datarate;  % convert to velocity in mm/s
 
-filterB = ones(1, 50)./50; % broad filter for event detection, better detection of bout_off
+idx_nan     = isnan(dx);
+dx(idx_nan) = 0; % for filtering nan values need to be removed 
+dy(idx_nan) = 0;
 
-dxB                       = filtfilt(filterB, 1, dx);
-dyB                       = filtfilt(filterB, 1, dy);
+filterB    = ones(1, 101)./101; % broad filter for event detection, better detection of bout_off
 
-tmp_fdistB                = sqrt(dxB.^2 + dyB.^2);     % distance moved between iterations, in pixels
-tmp_fdistB                = tmp_fdistB./20;  % convert to distance in mm
-tmp_fvelB                 = tmp_fdistB.*datarate;  % convert to velocity in mm/s
+dxB        = filtfilt(filterB, 1, dx);
+dyB        = filtfilt(filterB, 1, dy);
 
+tmp_fdistB = sqrt(dxB.^2 + dyB.^2);     % distance moved between iterations, in pixels
+tmp_fdistB = tmp_fdistB./20;  % convert to distance in mm
+tmp_fvelB  = tmp_fdistB.*datarate;  % convert to velocity in mm/s
 
+tmp_fvelB(idx_nan) = nan; % re-insert the nan values
 
-figure, plot(tmp_vel_unfilt); hold on; plot(tmp_fvelB,'LineWidth',5); hold on; plot(50*diff([0; tmp_data(:,6)])-100);
+% orientation
+
+tmp_delta_ori = [nan; diff(tmp_data(:, 6))];
+
+% correction of discontinuties when fish turns from 0 to 2*pi or vice versa
+
+for kk = 1: length(tmp_delta_ori)
+    
+    if tmp_delta_ori(kk) > pi % right turn
+        tmp_delta_ori(kk) =  tmp_delta_ori(kk) - 2*pi;
+        
+    elseif tmp_delta_ori(kk) < -pi % left turn
+        tmp_delta_ori(kk) =  2*pi + tmp_delta_ori(kk);
+    end
+    
+end   
+
+figure, 
+hold on; 
+%plot(tmp_vel_unfilt); 
+%plot(tmp_fvelB,'LineWidth',5); 
+plot(tmp_data(:,6));
+plot(tmp_delta_ori);
+hold off;
 
