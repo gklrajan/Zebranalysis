@@ -27,31 +27,39 @@ tmp_data = reshape(tmp_data, [num_data_categories, size(tmp_data, 1)/num_data_ca
 % camera timecounter and datarate
 % linearize the saw-tooth function timestamps
 
-time_diff           = [0; diff(tmp_data(:, 2))];                     % in microseconds
-idx_time            = time_diff <= -2^32/1000 + 2*median(time_diff); % find the frames when timecounter was reset to zero
-time_diff(idx_time) = median(time_diff);                             % reset the time difference between these frames to the median in microseconds
-    
-timebase = (cumsum(time_diff) + 1) ./10^6;                           % new timebase in seconds
+time_diff      = [0; diff(tmp_data(:, 2))];                     % in microseconds
+idx            = time_diff <= -2^32/1000 + 2*median(time_diff); % find the frames when timecounter was reset to zero
+time_diff(idx) = median(time_diff);                             % reset the time difference between these frames to the median in microseconds
 
-% camera frame length in microsecond
+% camera frame length in microseconds based on the camera timestamps
 frame_length = median(time_diff);
 
-%
-datarate     = round(1/(median(time_diff)).*10^6);                   % aquisition datarate in Hertz based on the frame timestamps
+% aquisition datarate in Hertz based on the camera timestamps
+datarate     = round(1/(median(time_diff)).*10^6);  
+
+idx_time     = abs(time_diff) >= 1.1*frame_length; % searches for time differences between frames that are +-10% of the expected frame duration
 
 % camera frame counters and missing frames
 % fill in nan values when frames were lost (most likely due to fish being lost during tracking ) 
 
 frame_diff = [0; diff(tmp_data(:, 1))]; 
-idx_frame  = frame_diff > 1;                             % find missing frames
+idx_frame  = frame_diff > 1;                             % index of missing frames
 
-num_frames_lost = sum(frame_diff(idx_frame) - 1);      
-fprintf('total number of frames when fish was most likely lost during tracking: %d\n ', num_frames_lost);
+idx_lost        = find(idx_frame == 1); % first frame in the block of missed frames
+num_frames_lost = sum(frame_diff(idx_frame) - 1);
+
+fprintf('first frame in the block of missed frames : number of frames lost\n\n');
+fprintf('%d: %d \n',  [idx_lost, frame_diff(idx_frame)-1].');
+
+figure, plot(frame_diff); hold on; plot(idx_lost, frame_diff(idx_lost) ,'o');
+xlim([-10000, size(frame_diff,1)]);
+
+% checks if missed timestamps coincide with missed frames, is 0 if inconsistent timestamps outside of missed frames 
+isTime = isequal(idx_time, idx_frame);
 
 % insert nans for lost frames...
 
 insert_blocks = @(insert_block, vector, n) cat(1,  vector(1:n-1,:), insert_block, vector(n:end,:) );
-idx_lost      = find(idx_frame == 1);
 
 for ii = nnz(idx_frame):-1:1
  
@@ -67,8 +75,6 @@ tmp_data(:,1) = tmp_data(:,1) - tmp_data(1,1)+1;
 
 
 %%
-
-
 
 xpos = tmp_data(:, 4);
 ypos = tmp_data(:, 5);
