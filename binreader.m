@@ -120,7 +120,7 @@ ypos = tmp_data(:, 5);
 
 % plot fish position 
 xx = [xpos'; xpos']; yy = [ypos'; ypos'];
-z  = 1:size(xpos', 2); zz = [z; z]; % frame-vector
+z  = 1:size(xpos', 2); zz = [z; z];       % create frame-vector
 
 figure
 hs = surf(xx, yy, zz, zz, 'EdgeColor', 'interp', 'LineWidth', 2);
@@ -143,14 +143,14 @@ idx_nan     = isnan(dx);
 dx(idx_nan) = 0; % for filtering nan values need to be removed 
 dy(idx_nan) = 0;
 
-filter    = ones(1, 101)./101; % filter tbd
+filter    = ones(1, 31)./31; % filter tbd
 
 dxf        = filtfilt(filter, 1, dx);
 dyf        = filtfilt(filter, 1, dy);
 
 tmp_fdist = sqrt(dxf.^2 + dyf.^2);     % distance moved between iterations, in pixels
-tmp_fdist = tmp_fdist./camscale;  % convert to distance in mm
-tmp_fvel  = tmp_fdist.*datarate_acquis;  % convert to velocity in mm/s
+tmp_fdist = tmp_fdist./camscale_px_per_mm;  % convert to distance in mm
+tmp_fvel  = tmp_fdist.*datarate_Hz;  % convert to velocity in mm/s
 
 tmp_fvel(idx_nan) = nan; % re-insert the nan values
 
@@ -171,11 +171,16 @@ for kk = 1: length(tmp_delta_ori)
     
 end   
 
-figure, 
+%%
+fig1 = figure;
 hold on; 
 plot(tmp_vel_unfilt); 
-%plot(tmp_fvelB,'LineWidth',5); 
-%plot(tmp_data(:,6));
+plot(tmp_fvel,'LineWidth',5);
+plot(dx-10);
+plot(dy-20);
 plot(50*tmp_delta_ori-30);
 hold off;
+
+dcm1 = datacursormode(fig1);
+set(dcm1, 'UpdateFcn', @Data_Cursor_precision, 'Enable', 'on');
 
