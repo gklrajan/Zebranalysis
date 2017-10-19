@@ -1,9 +1,10 @@
+%% Figures on/off
 
-clearvars; clc;
+set(0, 'DefaultFigureVisible', 'on');
 
-fname = uigetfile('*.bin');
+%%
 
-% data key
+% Data key
 % 1 frame #
 % 2 camera time in microsec (for data transfer purposes microseconds instead of nanoseconds used)
 % 3 system time in ms
@@ -11,12 +12,18 @@ fname = uigetfile('*.bin');
 % 5 ypos
 % 6 angle in rad
 
+clearvars; clc;
+
+[FileName, PathName] = uigetfile('*.bin');
+cd(PathName);
+
 num_data_categories = 6;
 camscale            = 20.6; % px/mm
+datarate            = 750;  % Hertz
 
 % Read and reorganize the bin file
 
-h        = fopen(fname);
+h        = fopen([PathName, FileName]);
 tmp_data = fread(h, inf, 'float');
 fclose(h);
 
@@ -31,12 +38,12 @@ idx            = time_diff <= -2^32/1000 + 2*median(time_diff); % find the frame
 time_diff(idx) = median(time_diff);                             % reset the time difference between these frames to the median in microseconds
 
 % camera frame length in microseconds based on the camera timestamps
-frame_length = median(time_diff);
+frame_length   = median(time_diff);
 
 % aquisition datarate in Hertz based on the camera timestamps
-datarate     = round(1/(median(time_diff)).*10^6);  
+datarate_calc  = (1/(median(time_diff)).*10^6);  
 
-idx_time     = abs(time_diff) >= 1.1*frame_length; % searches for time differences between frames that are +-10% of the expected frame duration
+idx_time       = abs(time_diff) >= 1.1*frame_length; % searches for time differences between frames that are +-10% of the expected frame duration
 
 % camera frame counters and missing frames
 % fill in nan values when frames were lost (most likely due to fish being lost during tracking ) 
@@ -91,6 +98,15 @@ tmp_data(:,1) = tmp_data(:,1) - tmp_data(1,1) + 1; % framecounter starts at 1
 
 xpos = tmp_data(:, 4);
 ypos = tmp_data(:, 5);
+
+% plot fish position 
+xx = [xpos'; xpos']; yy = [ypos'; ypos'];
+z  = 1:size(xpos', 2); zz = [z; z]; % frame-vector
+
+figure
+hs = surf(xx, yy, zz, zz, 'EdgeColor', 'interp', 'LineWidth', 2);
+colormap('parula');
+view([0 90 0]); 
 
 dx   = [0; diff(xpos)]; % distance between two consecutive x-coordinates
 dy   = [0; diff(ypos)]; % distance between two consecutive y-coordinates
