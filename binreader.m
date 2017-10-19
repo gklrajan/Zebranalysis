@@ -17,9 +17,17 @@ clearvars; clc;
 [FileName, PathName] = uigetfile('*.bin');
 cd(PathName);
 
+tmp_str = strsplit(FileName, '_');
+
+acquis_date = tmp_str{1, 1};
+acquis_time = tmp_str{1, 2};
+exp_type    = tmp_str{1, 3};
+fish_num    = tmp_str{1, 4};
+trial_num   = tmp_str{1, 6};
+
 num_data_categories = 6;
-camscale            = 20.6; % px/mm
-datarate_acquis     = 750;  % Hertz
+camscale_px_per_mm  = 20.6; % px/mm
+datarate_Hz         = 750;  % Hertz
 
 % Read and reorganize the bin file
 
@@ -30,26 +38,63 @@ fclose(h);
 tmp_data = tmp_data(1:(end-mod(size(tmp_data,1), num_data_categories)), 1); % cuts when parts of the data categories are missing at the end
 tmp_data = reshape(tmp_data, [num_data_categories, size(tmp_data, 1)/num_data_categories])';
 
-% camera timecounter and datarate
-% linearize the saw-tooth function timestamps
+%%
+% CHECK FOR TIMING PROBLEMS AND LOST FRAMES
 
-time_diff      = [0; diff(tmp_data(:, 2))];                     % in microseconds
-idx            = time_diff <= -2^32/1000 + 2*median(time_diff); % find the frames when timecounter was reset to zero
-time_diff(idx) = median(time_diff);                             % reset the time difference between these frames to the median in microseconds
+% TIMER COUNTER: 
+% time difference between frames in microseconds, based on the cameras 32bit time stamp counter (25Mhz, 40ns)
 
-% camera frame length in microseconds based on the camera timestamps
-frame_length   = median(time_diff);
+time_diff      = [0; diff(tmp_data(:, 2))];                      
 
-% aquisition datarate in Hertz based on the camera timestamps
-datarate_calc  = (1/(median(time_diff)).*10^6);  
+% linearize the "saw-tooth function" for the timecounter
+idx            = time_diff <= -2^32/1000 + 1.5*median(time_diff); % find the frames when 32bit timecounter was reset to zero
+time_diff(idx) = median(time_diff);                               % reset the time difference between these frames to the median in microseconds
 
-idx_time       = abs(time_diff) >= 1.1*frame_length; % searches for time differences between frames that are +-10% of the expected frame duration
+% camera frame length in microseconds calculated from the camera timecounter
+frame_length_calc_ms = median(time_diff);
+
+% aquisition datarate in Hertz calculated from the camera timecounter
+datarate_calc_Hz = (1/(median(time_diff)).*10^6);  
+
+% CHECK for timing problems (e.g. frames that took unusually long or are
+% unusually shorter than what is expected from the used datarate)
+
+idx_time       = abs(time_diff) >= 1.01*frame_length_calc_ms;  % searches for time differences between frames that are +-1% of the expected frame duration
+
+
+% FRAME COUNTER:
+% index difference between frames, based on the cameras 24bit frame counter
+
+frame_diff = [0; diff(tmp_data(:, 1))]; 
+
+% linearize the "saw-tooth function" for the frame counter (should not
+% happen at low datarates) 
+idx             = frame_diff <= -2^24 + 1.5*median(frame_diff); % find the frames when 24bit framecounter was reset to zero
+frame_diff(idx) = 1;                                            % reset the frame difference between these frames to 1
+
+% CHECK for missing frames
+
+idx_frame  = frame_diff > 1;                              % index of missing frames
+
+idx_lost        = find(idx_frame == 1); % first frame in the block of missed frames
+num_frames_lost = sum(frame_diff(idx_frame) - 1);
+
+% checks if missed timestamps coincide with missed frames, is 0 if inconsistent timestamps outside of missed frames 
+isTime = isequal(idx_time, idx_frame);
+
+% prints the above calculated values
+
+fprintf(
+fprintf('first frame in the block of missed frames : number of frames lost\n\n');
+fprintf('%d: %d \n',  [idx_lost, frame_diff(idx_frame)-1].');
+
+
+
+%%
 
 % camera frame counters and missing frames
 % fill in nan values when frames were lost (most likely due to fish being lost during tracking ) 
 
-frame_diff = [0; diff(tmp_data(:, 1))]; 
-idx_frame  = frame_diff > 1;                             % index of missing frames
 
 idx_lost        = find(idx_frame == 1); % first frame in the block of missed frames
 num_frames_lost = sum(frame_diff(idx_frame) - 1);
@@ -57,8 +102,7 @@ num_frames_lost = sum(frame_diff(idx_frame) - 1);
 fprintf('first frame in the block of missed frames : number of frames lost\n\n');
 fprintf('%d: %d \n',  [idx_lost, frame_diff(idx_frame)-1].');
 
-% checks if missed timestamps coincide with missed frames, is 0 if inconsistent timestamps outside of missed frames 
-isTime = isequal(idx_time, idx_frame);
+
 
 if isTime ==0
     fprintf('timing counter shows flawed interframe timing independent of missing frames!!!');
