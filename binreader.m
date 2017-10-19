@@ -134,8 +134,10 @@ dx   = [0; diff(xpos)]; % distance between two consecutive x-coordinates
 dy   = [0; diff(ypos)]; % distance between two consecutive y-coordinates
 
 tmp_dist_unfilt           = sqrt(dx.^2 + dy.^2);
-tmp_dist_unfilt           = tmp_dist_unfilt./camscale;  % convert to distance in mm
-tmp_vel_unfilt            = tmp_dist_unfilt.*datarate_acquis;  % convert to velocity in mm/s
+tmp_dist_unfilt           = tmp_dist_unfilt./camscale_px_per_mm;  % convert to distance in mm
+tmp_vel_unfilt            = tmp_dist_unfilt.*datarate_Hz;         % convert to velocity in mm/s
+
+%%
 
 idx_nan     = isnan(dx);
 dx(idx_nan) = 0; % for filtering nan values need to be removed 
