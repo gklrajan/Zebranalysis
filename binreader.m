@@ -17,20 +17,18 @@ clearvars; clc;
 [FileName, PathName] = uigetfile('*.bin');
 cd(PathName);
 
+% extract parameters from filename
 tmp_str = strsplit(FileName, '_');
 
-acquis_date = tmp_str{1, 1};
-acquis_time = tmp_str{1, 2};
-exp_type    = tmp_str{1, 3};
-fish_num    = tmp_str{1, 4};
-trial_num   = tmp_str{1, 6};
+% save parameters in strings
+acquis_date = tmp_str{1, 1}; acquis_time = tmp_str{1, 2}; exp_type    = tmp_str{1, 3}; fish_num    = tmp_str{1, 4}; trial_num   = tmp_str{1, 6};
 
+% acquisition parameters
 num_data_categories = 6;
 camscale_px_per_mm  = 20.6; % px/mm
 datarate_Hz         = 750;  % Hertz
 
 % Read and reorganize the bin file
-
 h        = fopen([PathName, FileName]);
 tmp_data = fread(h, inf, 'float');
 fclose(h);
@@ -73,57 +71,43 @@ idx             = frame_diff <= -2^24 + 1.5*median(frame_diff); % find the frame
 frame_diff(idx) = 1;                                            % reset the frame difference between these frames to 1
 
 % CHECK for missing frames
-
-idx_frame  = frame_diff > 1;                              % index of missing frames
-
-idx_lost        = find(idx_frame == 1); % first frame in the block of missed frames
-num_frames_lost = sum(frame_diff(idx_frame) - 1);
+idx_frame  = frame_diff > 1;                         % index of missing frames
+idx_lost   = find(idx_frame == 1);                   % first frame in the block of missed frames
 
 % checks if missed timestamps coincide with missed frames, is 0 if inconsistent timestamps outside of missed frames 
 isTime = isequal(idx_time, idx_frame);
 
 % prints the above calculated values
 
-fprintf(
-fprintf('first frame in the block of missed frames : number of frames lost\n\n');
-fprintf('%d: %d \n',  [idx_lost, frame_diff(idx_frame)-1].');
-
+fprintf('\nacquisition time: %s %s', acquis_date, acquis_time); 
+fprintf('\nexperiment type: %s', exp_type); 
+fprintf('\nfish number: %s', fish_num); 
+fprintf('\ntrial number: %s', trial_num);
+fprintf('\n\nfirst frame in the block of missed frames : number of frames lost\n');
+fprintf('\n %d: %d',  [idx_lost, frame_diff(idx_frame)-1].');
+fprintf('\n\ntiming outside of lost frames flawed:  %d  \n', ~isTime  );
 
 
 %%
+% INSERT nans for lost frames...
 
-% camera frame counters and missing frames
-% fill in nan values when frames were lost (most likely due to fish being lost during tracking ) 
+% define anonymous function that inserts (nxm) blocks into (oxm) matrices
+insert_blocks = @(insert_block, matrix, n) cat(1,  matrix(1:n-1,:), insert_block, matrix(n:end,:) );
 
+data_raw = tmp_data;
 
-idx_lost        = find(idx_frame == 1); % first frame in the block of missed frames
-num_frames_lost = sum(frame_diff(idx_frame) - 1);
-
-fprintf('first frame in the block of missed frames : number of frames lost\n\n');
-fprintf('%d: %d \n',  [idx_lost, frame_diff(idx_frame)-1].');
-
-
-
-if isTime ==0
-    fprintf('timing counter shows flawed interframe timing independent of missing frames!!!');
-end
-
-% insert nans for lost frames...
-
-insert_blocks = @(insert_block, vector, n) cat(1,  vector(1:n-1,:), insert_block, vector(n:end,:) );
-
-raw_data = tmp_data;
-
-for ii = nnz(idx_frame):-1:1
+for ii = nnz(idx_frame):-1:1 % starts from the last row in the matrix to keep the indizes for block-insertion
  
     nan_block       = nan(frame_diff(idx_lost(ii)) - 1, num_data_categories);
     nan_block(:, 1) = tmp_data(idx_lost(ii)-1, 1)+1: tmp_data(idx_lost(ii)-1, 1) + frame_diff(idx_lost(ii))-1; % fill the first column of the Nan blocks with frame numbers that were missing
     
-    tmp_data = insert_blocks(nan_block, tmp_data, idx_lost(ii));
+    tmp_data        = insert_blocks(nan_block, tmp_data, idx_lost(ii));
     
 end
 
 tmp_data(:,1) = tmp_data(:,1) - tmp_data(1,1) + 1; % framecounter starts at 1
+
+%%
 
 %-------------------------------------------------------------------------------------
 %
