@@ -19,7 +19,7 @@ cd(PathName);
 
 num_data_categories = 6;
 camscale            = 20.6; % px/mm
-datarate            = 750;  % Hertz
+datarate_acquis     = 750;  % Hertz
 
 % Read and reorganize the bin file
 
@@ -56,15 +56,6 @@ num_frames_lost = sum(frame_diff(idx_frame) - 1);
 
 fprintf('first frame in the block of missed frames : number of frames lost\n\n');
 fprintf('%d: %d \n',  [idx_lost, frame_diff(idx_frame)-1].');
-
-figure, plot(frame_diff); hold on; plot(idx_lost, frame_diff(idx_lost) ,'o');
-xlim([-10000, size(frame_diff,1)]);
-title('lost frames');
-xlabel('Framecounter index');
-ylabel('delta (Framecounter index)');
-for ii=1:length(idx_lost)
-    text(idx_lost(ii), frame_diff(idx_lost(ii)) + 0.05*frame_diff(idx_lost(ii)), num2str(idx_lost(ii)), 'HorizontalAlignment', 'center');
-end
 
 % checks if missed timestamps coincide with missed frames, is 0 if inconsistent timestamps outside of missed frames 
 isTime = isequal(idx_time, idx_frame);
@@ -107,13 +98,16 @@ figure
 hs = surf(xx, yy, zz, zz, 'EdgeColor', 'interp', 'LineWidth', 2);
 colormap('parula');
 view([0 90 0]); 
+xlabel('x-position');
+ylabel('y-position');
+zlabel('frames');
 
 dx   = [0; diff(xpos)]; % distance between two consecutive x-coordinates
 dy   = [0; diff(ypos)]; % distance between two consecutive y-coordinates
 
 tmp_dist_unfilt           = sqrt(dx.^2 + dy.^2);
 tmp_dist_unfilt           = tmp_dist_unfilt./camscale;  % convert to distance in mm
-tmp_vel_unfilt            = tmp_dist_unfilt.*datarate;  % convert to velocity in mm/s
+tmp_vel_unfilt            = tmp_dist_unfilt.*datarate_acquis;  % convert to velocity in mm/s
 
 idx_nan     = isnan(dx);
 dx(idx_nan) = 0; % for filtering nan values need to be removed 
@@ -126,7 +120,7 @@ dyf        = filtfilt(filter, 1, dy);
 
 tmp_fdist = sqrt(dxf.^2 + dyf.^2);     % distance moved between iterations, in pixels
 tmp_fdist = tmp_fdist./camscale;  % convert to distance in mm
-tmp_fvel  = tmp_fdist.*datarate;  % convert to velocity in mm/s
+tmp_fvel  = tmp_fdist.*datarate_acquis;  % convert to velocity in mm/s
 
 tmp_fvel(idx_nan) = nan; % re-insert the nan values
 
@@ -149,9 +143,9 @@ end
 
 figure, 
 hold on; 
-%plot(tmp_vel_unfilt); 
+plot(tmp_vel_unfilt); 
 %plot(tmp_fvelB,'LineWidth',5); 
-plot(tmp_data(:,6));
-plot(tmp_delta_ori);
+%plot(tmp_data(:,6));
+plot(50*tmp_delta_ori-30);
 hold off;
 
