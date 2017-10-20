@@ -85,7 +85,7 @@ fprintf('\nfish number: %s', fish_num);
 fprintf('\ntrial number: %s', trial_num);
 fprintf('\n\nfirst frame in the block of missed frames : number of frames lost\n');
 fprintf('\n %d: %d',  [idx_lost, frame_diff(idx_frame)-1].');
-fprintf('\n\ntiming outside of lost frames flawed:  %d  \n', ~isTime  );
+fprintf('\n\ntiming flawed (outside of lost frames):  %d  \n', ~isTime  );
 
 
 %%
@@ -143,7 +143,7 @@ idx_nan     = isnan(dx);
 dx(idx_nan) = 0; % for filtering nan values need to be removed 
 dy(idx_nan) = 0;
 
-filter    = ones(1, 31)./31; % filter tbd
+filter    = ones(1, 35)./35; % filter tbd
 
 dxf        = filtfilt(filter, 1, dx);
 dyf        = filtfilt(filter, 1, dy);
@@ -175,10 +175,12 @@ end
 fig1 = figure;
 hold on; 
 plot(tmp_vel_unfilt); 
-plot(tmp_fvel,'LineWidth',5);
+plot(tmp_fvel,'LineWidth', 3);
+plot(20*dxf-10);
 plot(dx-10);
+plot(20*dyf-20);
 plot(dy-20);
-plot(50*tmp_delta_ori-30);
+plot(50*tmp_delta_ori-40);
 hold off;
 
 dcm1 = datacursormode(fig1);
