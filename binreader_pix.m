@@ -89,24 +89,24 @@ fprintf('\n %d: %d',  [idx_lost, frame_diff(idx_frame)-1].');
 fprintf('\n\ntiming flawed (outside of lost frames):  %d  \n', ~isTime  );
 
 
-%%
-% INSERT nans for lost frames...
-
-% define anonymous function that inserts (nxm) blocks into (oxm) matrices
-insert_blocks = @(insert_block, matrix, n) cat(1,  matrix(1:n-1,:), insert_block, matrix(n:end,:) );
-
-data_raw = tmp_data;
-
-for ii = nnz(idx_frame):-1:1 % starts from the last row in the matrix to keep the indizes for block-insertion
- 
-    nan_block       = nan(frame_diff(idx_lost(ii)) - 1, num_data_categories);
-    nan_block(:, 1) = tmp_data(idx_lost(ii)-1, 1)+1: tmp_data(idx_lost(ii)-1, 1) + frame_diff(idx_lost(ii))-1; % fill the first column of the Nan blocks with frame numbers that were missing
-    
-    tmp_data        = insert_blocks(nan_block, tmp_data, idx_lost(ii));
-    
-end
-
-tmp_data(:,1) = tmp_data(:,1) - tmp_data(1,1) + 1; % framecounter starts at 1
+% %%
+% % INSERT nans for lost frames...
+% 
+% % define anonymous function that inserts (nxm) blocks into (oxm) matrices
+% insert_blocks = @(insert_block, matrix, n) cat(1,  matrix(1:n-1,:), insert_block, matrix(n:end,:) );
+% 
+% data_raw = tmp_data;
+% 
+% for ii = nnz(idx_frame):-1:1 % starts from the last row in the matrix to keep the indizes for block-insertion
+%  
+%     nan_block       = nan(frame_diff(idx_lost(ii)) - 1, num_data_categories);
+%     nan_block(:, 1) = tmp_data(idx_lost(ii)-1, 1)+1: tmp_data(idx_lost(ii)-1, 1) + frame_diff(idx_lost(ii))-1; % fill the first column of the Nan blocks with frame numbers that were missing
+%     
+%     tmp_data        = insert_blocks(nan_block, tmp_data, idx_lost(ii));
+%     
+% end
+% 
+% tmp_data(:,1) = tmp_data(:,1) - tmp_data(1,1) + 1; % framecounter starts at 1
 
 %% read the fish images
 
@@ -126,7 +126,7 @@ tmp_CXP = tmp_CXP'; %Transpose to column-wise
 % frame onto it
 CXPimg = zeros(60,60,(size(tmp_CXP,2)));
 for tt = 1:size(tmp_CXP,2)
-    res = reshape(tmp_CXP(:,tt),60,[])';
+    res = reshape(tmp_CXP(:,tt),60,[]);
     CXPimg(:,:,tt) = res;
 end
 figure(3);imshow3D(CXPimg);
