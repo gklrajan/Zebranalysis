@@ -143,10 +143,12 @@ idx_nan     = isnan(dx);
 dx(idx_nan) = 0; % for filtering nan values need to be removed 
 dy(idx_nan) = 0;
 
-filter    = ones(1, 35)./35; % filter tbd
+filter     = ones(1, 55)./55; % filter tbd
 
 dxf        = filtfilt(filter, 1, dx);
 dyf        = filtfilt(filter, 1, dy);
+
+dxff       = fbtrim(dx, [0.5, 1, 0.1, 15, 5]); % [0.5, 0.6, 0.01, 5, 5]
 
 tmp_fdist = sqrt(dxf.^2 + dyf.^2);     % distance moved between iterations, in pixels
 tmp_fdist = tmp_fdist./camscale_px_per_mm;  % convert to distance in mm
@@ -176,8 +178,11 @@ fig1 = figure;
 hold on; 
 plot(tmp_vel_unfilt); 
 plot(tmp_fvel,'LineWidth', 3);
-plot(20*dxf-10);
+
 plot(dx-10);
+plot(20*dxf-10);
+%plot(20*dxff-10);
+
 plot(20*dyf-20);
 plot(dy-20);
 plot(50*tmp_delta_ori-40);
