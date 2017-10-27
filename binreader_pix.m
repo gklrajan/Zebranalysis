@@ -10,7 +10,7 @@ set(0, 'DefaultFigureVisible', 'on');
 % 4 xpos, start at 0
 % 5 ypos
 % 6 angle in rad
-% 7:3606 60x60 cropped window around fish
+% 7:3606, 60x60 cropped window around fish
 
 clearvars; clc;
 
